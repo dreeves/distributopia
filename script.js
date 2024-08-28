@@ -151,3 +151,31 @@ d3.select("#max-x").on("input", function() {
 });
 
 update();
+
+const drag = d3.drag()
+  .on("start", function(event) {
+    d3.select(this).raise().attr("r", 7);
+  })
+  .on("drag", function(event, d) {
+    const coords = d3.pointer(event, g.node());
+    const newX = x.invert(coords[0]);
+    
+    // Find the index of the current dot
+    const index = data.indexOf(d);
+    
+    // Constrain x between the previous and next dot
+    const minX = index > 0 ? data[index - 1].x : x.domain()[0];
+    const maxX = index < data.length - 1 ? data[index + 1].x : x.domain()[1];
+    
+    d.x = Math.max(minX, Math.min(maxX, newX));
+    d.y = Math.max(0, Math.min(1, y.invert(coords[1])));
+    
+    d3.select(this).attr("cx", x(d.x)).attr("cy", y(d.y));
+    update();
+  })
+  .on("end", function() {
+    d3.select(this).attr("r", 5);
+  });
+
+// Add touch events
+drag.touchable(true);
