@@ -33,7 +33,7 @@ const area = d3.area()
   .y1(d => y(d.y));
 
 // Line for CDF
-const line = d3.line()
+const cdfLine = d3.line()
   .x(d => x(d.x))
   .y(d => yRight(d.cdf));
 
@@ -57,17 +57,30 @@ function update() {
 
   // Calculate CDF
   cdfData = [];
-  let cumulative = 0;
-  for (let i = 0; i < data.length; i++) {
-    cumulative += data[i].y * (i === 0 ? data[i].x : data[i].x - data[i-1].x);
-    cdfData.push({x: data[i].x, cdf: cumulative});
+  let cdfShift = 0;
+  for (let i = 0; i < data.length - 1; i++) {
+    const x1 = data[i].x;
+    const y1 = data[i].y;
+    const x2 = data[i + 1].x;
+    const y2 = data[i + 1].y;
+    
+    // Generate points for the CDF curve
+    for (let j = 0; j <= 10; j++) {
+      const t = j / 10;
+      const x = x1 + t * (x2 - x1);
+      const cdf = ((x - x1) * (-2 * x2 * y1 + x * (y1 - y2) + x1 * (y1 + y2))) / (2 * (x1 - x2));
+      cdfData.push({x: x, cdf: cdf + cdfShift});
+    }
+    cdfShift += ((x2 - x1) * (y1 + y2)) / 2; // Area of the trapezoid
   }
-  const maxCDF = cumulative;
+
+  // Normalize CDF
+  const maxCDF = Math.max(...cdfData.map(d => d.cdf));
   cdfData = cdfData.map(d => ({x: d.x, cdf: d.cdf / maxCDF}));
 
   // Update area and CDF path
   path.datum(data).attr("d", area);
-  cdfPath.datum(cdfData).attr("d", line);
+  cdfPath.datum(cdfData).attr("d", cdfLine);
 
   // Update handles
   const handles = g.selectAll(".handle").data(data.slice(1, -1), d => d.x);
