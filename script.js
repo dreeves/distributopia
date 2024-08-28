@@ -79,8 +79,8 @@ function update() {
   cdfData = cdfData.map(d => ({x: d.x, cdf: d.cdf / maxCDF}));
 
   // Update area and CDF path
-  path.datum(data).attr("d", area);
-  cdfPath.datum(cdfData).attr("d", cdfLine);
+  path.datum(data.filter(d => !isNaN(d.y))).attr("d", area);
+  cdfPath.datum(cdfData.filter(d => !isNaN(d.cdf))).attr("d", cdfLine);
 
   // Update handles
   const handles = g.selectAll(".handle").data(data.slice(1, -1), d => d.x);
