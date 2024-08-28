@@ -15,13 +15,16 @@ const xAxis = g.append("g")
 
 // Left Y axis (PDF)
 const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
-const yAxis = g.append("g").call(d3.axisLeft(y));
+const yAxis = g.append("g")
+  .call(d3.axisLeft(y))
+  .attr("color", "steelblue");  // Change color to blue
 
 // Right Y axis (CDF)
 const yRight = d3.scaleLinear().domain([0, 1]).range([height, 0]);
 g.append("g")
   .attr("transform", `translate(${width},0)`)
-  .call(d3.axisRight(yRight));
+  .call(d3.axisRight(yRight))
+  .attr("color", "red");  // Change color to red
 
 // Area under the curve (PDF)
 const area = d3.area()
