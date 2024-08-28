@@ -1,4 +1,36 @@
-html {
-  height: 100%;
-  width: 100%;
+
+body {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+h1 {
+  text-align: center;
+}
+svg {
+  max-width: 100%;
+  height: auto;
+}
+.handle {
+  cursor: pointer;
+  fill: steelblue;
+}
+.area {
+  fill: lightsteelblue;
+  stroke: steelblue;
+  stroke-width: 2;
+}
+.cdf-line {
+  fill: none;
+  stroke: red;
+  stroke-width: 2;
+}
+.inputs {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+input {
+  width: 60px;
 }
