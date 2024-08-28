@@ -1,7 +1,7 @@
-
 # Distributopia Knowledge Base
 
 ## Project Overview
+
 Distributopia is a web-based distribution-builder tool, similar to what Metaculus offers. It allows users to create and visualize probability distributions interactively.
 
 ## Technical Stack
@@ -34,4 +34,4 @@ Distributopia is a web-based distribution-builder tool, similar to what Metaculu
 ## Useful Resources
 - [D3.js Documentation](https://d3js.org/documentation)
 - [Metaculus Distribution Builder](https://www.metaculus.com/questions/create/) (for reference)
-
+- [D3.js Touch Support](https://github.com/d3/d3-drag#drag_touchable) (for mobile interactions)
