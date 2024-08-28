@@ -27,9 +27,8 @@ Distributopia is a web-based distribution-builder tool, similar to what Metaculu
 3. Ensure responsive design for various screen sizes.
 
 ## TODO
-- Implement additional distribution types
-- Add ability to save and load distributions
-- Improve mobile responsiveness
+- Figure out how to make the dots draggable on mobile
+- Add a dropdown of standard distributions to load up, that the user can then tweak by dragging the dots around
 
 ## Useful Resources
 - [D3.js Documentation](https://d3js.org/documentation)
