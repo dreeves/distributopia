@@ -64,14 +64,16 @@ function update() {
     const x2 = data[i + 1].x;
     const y2 = data[i + 1].y;
     
-    // Generate points for the CDF curve
-    for (let j = 0; j <= 10; j++) {
-      const t = j / 10;
-      const x = x1 + t * (x2 - x1);
-      const cdf = ((x - x1) * (-2 * x2 * y1 + x * (y1 - y2) + x1 * (y1 + y2))) / (2 * (x1 - x2));
-      cdfData.push({x: x, cdf: cdf + cdfShift});
+    if (x1 !== x2) {  // Check if the segment is not vertical
+      // Generate points for the CDF curve
+      for (let j = 0; j <= 10; j++) {
+        const t = j / 10;
+        const x = x1 + t * (x2 - x1);
+        const cdf = ((x - x1) * (-2 * x2 * y1 + x * (y1 - y2) + x1 * (y1 + y2))) / (2 * (x1 - x2));
+        cdfData.push({x: x, cdf: cdf + cdfShift});
+      }
+      cdfShift += ((x2 - x1) * (y1 + y2)) / 2; // Area of the trapezoid
     }
-    cdfShift += ((x2 - x1) * (y1 + y2)) / 2; // Area of the trapezoid
   }
 
   // Normalize CDF
