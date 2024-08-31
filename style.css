@@ -11,10 +11,12 @@ h1 {
 svg {
   max-width: 100%;
   height: auto;
+  touch-action: none;  /* Prevents default touch actions */
 }
 .handle {
   cursor: pointer;
   fill: steelblue;
+  touch-action: none;  /* Prevents default touch actions */
 }
 .area {
   fill: lightsteelblue;
@@ -34,3 +36,4 @@ svg {
 input {
   width: 60px;
 }
+

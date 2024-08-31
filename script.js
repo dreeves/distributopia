@@ -154,9 +154,11 @@ update();
 
 const drag = d3.drag()
   .on("start", function(event) {
+    if (event.sourceEvent.type === 'touchstart') return;
     d3.select(this).raise().attr("r", 7);
   })
   .on("drag", function(event, d) {
+    if (event.sourceEvent.type === 'touchmove') return;
     const coords = d3.pointer(event, g.node());
     const newX = x.invert(coords[0]);
     
@@ -173,9 +175,7 @@ const drag = d3.drag()
     d3.select(this).attr("cx", x(d.x)).attr("cy", y(d.y));
     update();
   })
-  .on("end", function() {
+  .on("end", function(event) {
+    if (event.sourceEvent.type === 'touchend') return;
     d3.select(this).attr("r", 5);
   });
-
-// Add touch events
-drag.touchable(true);
