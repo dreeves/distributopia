@@ -4,21 +4,6 @@
 
 Distributopia is a web-based distribution-builder tool, similar to what Metaculus offers. It allows users to create and visualize probability distributions interactively.
 
-## Math
-
-Here's how to get the cdf from a segment of the density function.
-Say the density function (the thing the user is drawing) starts at (x1,x2) and
-goes to (x2,y2). Then we can the cdf for that segment like so:
-
-```
-m = (y2-y1)/(x2-x1);
-b = y1 - m*x1;
-Integrate[m*x + b, {t, x1, x}]
-```
-
-which yields this:
-
-`((x-x1)*(x2*y1 - x1*y2 + x*(y2-y1))) / (x2-x1)`
 
 ## Technical Stack
 - HTML5
