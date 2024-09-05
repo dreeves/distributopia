@@ -207,22 +207,28 @@ function generateNormalDistribution() {
   const maxY = Math.max(...data.map(d => d.y));
   data = data.map(d => ({x: d.x, y: d.y / maxY}));
   
+  // Add endpoints to make them visible and draggable
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
   update();
 }
 
 function generateUniformDistribution() {
-  const points = 4;
+  const points = 2;
   data = [];
   const y = 1 / (maxX - minX);
   for (let i = 0; i < points; i++) {
     const x = minX + (i / (points - 1)) * (maxX - minX);
     data.push({x: x, y: y});
   }
+  // Add endpoints to make them visible and draggable
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
   update();
 }
 
 function generateExponentialDistribution() {
-  const points = 20;
+  const points = 10; // Reduced from 50 to 10
   const rate = 1 / ((maxX - minX) / 5); // Assuming mean is 1/5 of the range
   data = [];
   for (let i = 0; i < points; i++) {
@@ -233,6 +239,9 @@ function generateExponentialDistribution() {
   // Normalize the y values
   const maxY = Math.max(...data.map(d => d.y));
   data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  // Add endpoints to make them visible and draggable
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
   update();
 }
 
