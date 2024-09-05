@@ -179,3 +179,63 @@ const drag = d3.drag()
     if (event.sourceEvent.type === 'touchend') return;
     d3.select(this).attr("r", 5);
   });
+
+function loadDistribution() {
+  const distributionType = document.getElementById('distribution-select').value;
+  if (distributionType === 'normal') {
+    generateNormalDistribution();
+  } else if (distributionType === 'uniform') {
+    generateUniformDistribution();
+  } else if (distributionType === 'exponential') {
+    generateExponentialDistribution();
+  }
+}
+
+function generateNormalDistribution() {
+  const mean = (maxX + minX) / 2;
+  const stdDev = (maxX - minX) / 6; // Assuming 99.7% of data within range
+  const points = 18;
+  
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * 
+               Math.exp(-0.5 * Math.pow((x - mean) / stdDev, 2));
+    data.push({x: x, y: y});
+  }
+  
+  // Normalize the y values
+  const maxY = Math.max(...data.map(d => d.y));
+  data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  
+  update();
+}
+
+function generateUniformDistribution() {
+  const points = 3;
+  data = [];
+  const y = 1 / (maxX - minX);
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    data.push({x: x, y: y});
+  }
+  update();
+}
+
+function generateExponentialDistribution() {
+  const points = 20;
+  const rate = 1 / ((maxX - minX) / 5); // Assuming mean is 1/5 of the range
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const y = rate * Math.exp(-rate * (x - minX));
+    data.push({x: x, y: y});
+  }
+  // Normalize the y values
+  const maxY = Math.max(...data.map(d => d.y));
+  data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  update();
+}
+
+// Add event listener for the load distribution button
+document.getElementById('load-distribution').addEventListener('click', loadDistribution);
