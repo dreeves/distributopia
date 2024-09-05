@@ -1,3 +1,17 @@
+let dataHistory = [];
+
+function saveState() {
+  dataHistory.push(JSON.parse(JSON.stringify(data)));
+}
+
+function undo() {
+  if (dataHistory.length > 1) {
+    dataHistory.pop(); // Remove the current state
+    data = dataHistory[dataHistory.length - 1];
+    update();
+  }
+}
+
 let minX = 0;
 let maxX = 1;
 
@@ -50,7 +64,12 @@ const cdfPath = g.append("path")
   .attr("class", "cdf-line");
 
 // Function to update the area, CDF, and handles
+function saveState() {
+  dataHistory.push(JSON.parse(JSON.stringify(data)));
+}
+
 function update() {
+  saveState();
   // Update scales
   x.domain([minX, maxX]);
   xAxis.call(d3.axisBottom(x));
@@ -180,6 +199,14 @@ const drag = d3.drag()
     d3.select(this).attr("r", 5);
   });
 
+function undo() {
+  if (dataHistory.length > 1) {
+    dataHistory.pop(); // Remove the current state
+    data = dataHistory[dataHistory.length - 1];
+    update();
+  }
+}
+
 function loadDistribution(type) {
   if (type === 'normal') {
     generateNormalDistribution();
@@ -247,7 +274,23 @@ function generateExponentialDistribution() {
   update();
 }
 
+function undo() {
+  if (dataHistory.length > 1) {
+    dataHistory.pop(); // Remove the current state
+    data = dataHistory[dataHistory.length - 1];
+    update();
+  }
+}
+
+function saveState() {
+  dataHistory.push(JSON.parse(JSON.stringify(data)));
+}
+
+document.getElementById('undo-button').addEventListener('click', undo);
+
 document.getElementById('normal-dist').addEventListener('click', () => loadDistribution('normal'));
+
+document.getElementById('undo-button').addEventListener('click', undo);
 document.getElementById('uniform-dist').addEventListener('click', () => loadDistribution('uniform'));
 document.getElementById('exponential-dist').addEventListener('click', () => loadDistribution('exponential'));
 
