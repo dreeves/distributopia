@@ -298,7 +298,7 @@ function generateLognormalDistribution() {
   const points = 10;
   data = [];
   for (let i = 0; i < points; i++) {
-    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const x = Math.max(minX, 0.01) + (i / (points - 1)) * (maxX - Math.max(minX, 0.01));
     const y = (1 / (x * sigma * Math.sqrt(2 * Math.PI))) * 
                Math.exp(-Math.pow(Math.log(x) - mu, 2) / (2 * Math.pow(sigma, 2)));
     data.push({x: x, y: y});
