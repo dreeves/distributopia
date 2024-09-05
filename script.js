@@ -180,13 +180,12 @@ const drag = d3.drag()
     d3.select(this).attr("r", 5);
   });
 
-function loadDistribution() {
-  const distributionType = document.getElementById('distribution-select').value;
-  if (distributionType === 'normal') {
+function loadDistribution(type) {
+  if (type === 'normal') {
     generateNormalDistribution();
-  } else if (distributionType === 'uniform') {
+  } else if (type === 'uniform') {
     generateUniformDistribution();
-  } else if (distributionType === 'exponential') {
+  } else if (type === 'exponential') {
     generateExponentialDistribution();
   }
 }
@@ -212,7 +211,7 @@ function generateNormalDistribution() {
 }
 
 function generateUniformDistribution() {
-  const points = 3;
+  const points = 4;
   data = [];
   const y = 1 / (maxX - minX);
   for (let i = 0; i < points; i++) {
@@ -237,5 +236,6 @@ function generateExponentialDistribution() {
   update();
 }
 
-// Add event listener for the load distribution button
-document.getElementById('load-distribution').addEventListener('click', loadDistribution);
+document.getElementById('normal-dist').addEventListener('click', () => loadDistribution('normal'));
+document.getElementById('uniform-dist').addEventListener('click', () => loadDistribution('uniform'));
+document.getElementById('exponential-dist').addEventListener('click', () => loadDistribution('exponential'));

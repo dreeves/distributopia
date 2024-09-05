@@ -28,11 +28,14 @@ svg {
   stroke: red;
   stroke-width: 2;
 }
-.inputs, .distribution-section {
+.inputs {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
   flex-wrap: wrap;
+}
+.distribution-section { 
+  margin-top: 20px;
 }
 input, select {
   width: 80px;
