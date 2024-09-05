@@ -187,6 +187,8 @@ function loadDistribution(type) {
     generateUniformDistribution();
   } else if (type === 'exponential') {
     generateExponentialDistribution();
+  } else if (type === 'triangular') {
+    generateTriangularDistribution();
   }
 }
 
@@ -248,3 +250,106 @@ function generateExponentialDistribution() {
 document.getElementById('normal-dist').addEventListener('click', () => loadDistribution('normal'));
 document.getElementById('uniform-dist').addEventListener('click', () => loadDistribution('uniform'));
 document.getElementById('exponential-dist').addEventListener('click', () => loadDistribution('exponential'));
+
+function generateTriangularDistribution() {
+  const a = minX;
+  const b = maxX;
+  const c = (a + b) / 2; // Mode at the center
+  const points = 3;
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = a + (i / (points - 1)) * (b - a);
+    let y;
+    if (x < c) {
+      y = 1 * (x - a) / ((b - a) * (c - a));
+    } else {
+      y = 1 * (b - x) / ((b - a) * (b - c));
+    }
+    data.push({x: x, y: y});
+  }
+  // Add endpoints to make them visible and draggable
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
+  update();
+}
+
+function generateBetaDistribution() {
+  const alpha = 2;
+  const beta = 5;
+  const points = 10;
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const y = Math.pow(x, alpha - 1) * Math.pow(1 - x, beta - 1);
+    data.push({x: x, y: y});
+  }
+  // Normalize the y values
+  const maxY = Math.max(...data.map(d => d.y));
+  data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  // Add endpoints
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
+  update();
+}
+
+function generateLognormalDistribution() {
+  const mu = 0;
+  const sigma = 0.5;
+  const points = 10;
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const y = (1 / (x * sigma * Math.sqrt(2 * Math.PI))) * 
+               Math.exp(-Math.pow(Math.log(x) - mu, 2) / (2 * Math.pow(sigma, 2)));
+    data.push({x: x, y: y});
+  }
+  // Normalize the y values
+  const maxY = Math.max(...data.map(d => d.y));
+  data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  // Add endpoints
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
+  update();
+}
+
+function generateBimodalDistribution() {
+  const points = 10;
+  data = [];
+  for (let i = 0; i < points; i++) {
+    const x = minX + (i / (points - 1)) * (maxX - minX);
+    const y = Math.exp(-Math.pow(x - 0.3, 2) / 0.02) + Math.exp(-Math.pow(x - 0.7, 2) / 0.02);
+    data.push({x: x, y: y});
+  }
+  // Normalize the y values
+  const maxY = Math.max(...data.map(d => d.y));
+  data = data.map(d => ({x: d.x, y: d.y / maxY}));
+  // Add endpoints
+  data.unshift({x: minX, y: 0});
+  data.push({x: maxX, y: 0});
+  update();
+}
+
+// Add event listeners for the new buttons
+document.getElementById('triangular-dist').addEventListener('click', () => loadDistribution('triangular'));
+document.getElementById('beta-dist').addEventListener('click', () => loadDistribution('beta'));
+document.getElementById('lognormal-dist').addEventListener('click', () => loadDistribution('lognormal'));
+document.getElementById('bimodal-dist').addEventListener('click', () => loadDistribution('bimodal'));
+
+// Modify the loadDistribution function to include the new distributions
+function loadDistribution(type) {
+  if (type === 'normal') {
+    generateNormalDistribution();
+  } else if (type === 'uniform') {
+    generateUniformDistribution();
+  } else if (type === 'exponential') {
+    generateExponentialDistribution();
+  } else if (type === 'triangular') {
+    generateTriangularDistribution();
+  } else if (type === 'beta') {
+    generateBetaDistribution();
+  } else if (type === 'lognormal') {
+    generateLognormalDistribution();
+  } else if (type === 'bimodal') {
+    generateBimodalDistribution();
+  }
+}
