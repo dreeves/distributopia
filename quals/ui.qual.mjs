@@ -433,3 +433,14 @@ test('phone: tap a blank spot with 14px of sideways drift (more than a 5% step) 
   await synthTouch(page, [a, {x: (a.x + b.x) / 2, y: a.y}, b])
   await assertPts(page, [{u: .5, y: .5}])
 })
+
+test('desktop: drag across part of the Normal preset → its pts in that stretch give way to the trail; one undo restores them', async () => {
+  const {page} = await open(DESK)
+  await page.click('#normal-dist')
+  await mousePath(page, [[.3, .1], [.52, .1]])  // Normal's pts at 6/17, 7/17, 8/17 lie in that stretch
+  const got = await pts(page)
+  assert.equal(got.length, 18 - 3 + 5, JSON.stringify(got))
+  assert.ok(got.filter(p => p.u > .3 - TOL && p.u < .52 + TOL).every(p => Math.abs(p.y - .1) <= TOL), JSON.stringify(got))
+  await page.click('#undo-button')
+  assert.equal((await pts(page)).length, 18)
+})

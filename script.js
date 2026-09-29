@@ -77,13 +77,13 @@ function edit(next) { const prev = pts; pts = check(next); commit(prev) }
 // Index of the pt within HIT of plot-area position (x, y), or -1
 const pick = (x, y) => nearest(pts.map(p => [X(p.u), Y(p.y)]), x, y, HIT)
 
-// pts for the press so far (done: the pointer is up). From a blank spot: before plus a trail of
-// dots, only the one at the press while it's still a tap. On a pt: a drag moves the pt as far as the
+// pts for the press so far (done: the pointer is up). From a blank spot: a sketch of the path over
+// before, just the dot at the press while it's still a tap. On a pt: a drag moves the pt as far as the
 // pointer has moved; a tap removes it when the pointer comes up.
 function pressed(done) {
   const {before, i, path, tap} = press, [p0, p] = [path[0], path.at(-1)]
   const aspect = Y.range()[0] / X.range()[1]  // plot height over width, so trail spaces dots evenly on screen
-  return i < 0 ? add(before, ...trail(tap ? [p0] : path, STEP, aspect))
+  return i < 0 ? sketch(before, tap ? [p0] : path, STEP, aspect)
        : tap ? (done ? remove(before, i) : before)
        : move(before, i, {u: before[i].u + p.u - p0.u, y: before[i].y + p.y - p0.y})
 }

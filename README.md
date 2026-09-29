@@ -10,6 +10,7 @@ But then I got it working with Manicode. Yay!
 ## Wishlist
 
 1. A way to link to artibrary distibutions, maybe encoding it in the URL
+2. Quibble: when dragging from the side, onto or off of the plot, put a dot right on the edge where the dragging entered or left
 
 ## The Math
 

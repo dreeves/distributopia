@@ -74,6 +74,13 @@ function trail(path, step, aspect) {
   return dots.sort((p, q) => p.u - q.u)
 }
 
+// pts after a drag from a blank spot along path: the trail's dots replace the pts strictly inside
+// the stretch of u the path covered (a tap covers none, so replaces nothing)
+function sketch(pts, path, step, aspect) {
+  const us = path.map(q => clamp(q.u, 0, 1)), lo = Math.min(...us), hi = Math.max(...us)
+  return add(pts.filter(p => p.u <= lo || hi <= p.u), ...trail(path, step, aspect))
+}
+
 const remove = (pts, i) => pts.filter((_, j) => j !== i)
 
 // pts with pts[i] moved to q, but no farther in u than its neighbors and no farther in y than 0..1

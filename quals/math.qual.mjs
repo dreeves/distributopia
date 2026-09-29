@@ -7,8 +7,8 @@ import vm from 'node:vm'
 
 // math.js is a classic browser script, so evaluate it in this realm and pull out its globals
 vm.runInThisContext(fs.readFileSync(new URL('../math.js', import.meta.url), 'utf8'))
-const { check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, PRESETS } =
-  vm.runInThisContext('({ check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, PRESETS })')
+const { check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, sketch, PRESETS } =
+  vm.runInThisContext('({ check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, sketch, PRESETS })')
 
 const near = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} is not within ${tol} of ${b}`)
 
@@ -198,4 +198,24 @@ test('trail: pointer beyond the plot → path clamped to the unit square', () =>
 
 test('trail: any wiggly path → valid pts', () => {
   check(trail([.5, .61, .44, .7, .33, .9, .12, .95].map((u, i) => ({u, y: (i % 3) / 2})), .05, .5))
+})
+
+test('sketch: drag across existing pts → its dots replace those strictly inside the stretch of u it covered', () => {
+  const pts = [{u: .1, y: .5}, {u: .35, y: .9}, {u: .4, y: .9}, {u: .6, y: .5}]
+  assertPts(sketch(pts, [{u: .3, y: .2}, {u: .5, y: .2}], .05, .5),
+            [{u: .1, y: .5}, ...[.3, .35, .4, .45, .5].map(u => ({u, y: .2})), {u: .6, y: .5}])
+})
+
+test('sketch: a tap covers no stretch → replaces nothing, not even a pt at the very same u', () => {
+  assertPts(sketch([{u: .5, y: .9}], [{u: .5, y: .2}], .05, .5), [{u: .5, y: .9}, {u: .5, y: .2}])
+})
+
+test('sketch: out to .6 and back to .4 → the whole stretch reached, .3 to .6, counts', () => {
+  const got = sketch([{u: .55, y: .9}, {u: .65, y: .9}], [{u: .3, y: .1}, {u: .6, y: .1}, {u: .4, y: .1}], .05, .5)
+  assert.deepEqual(got.filter(p => p.y === .9), [{u: .65, y: .9}])
+})
+
+test('sketch: drag beyond the plot → covered stretch clamped to the unit square', () => {
+  const got = sketch([{u: .95, y: .9}], [{u: .8, y: .1}, {u: 1.3, y: .1}], .05, .5)
+  assert.ok(got.every(p => p.y !== .9), JSON.stringify(got))
 })
