@@ -2,43 +2,59 @@ body {
   font-family: Arial, sans-serif;
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 16px;
 }
 h1 {
   text-align: center;
 }
-svg {
-  max-width: 100%;
-  height: auto;
-  touch-action: none;  /* Prevents default touch actions */
+h3 {
+  margin-top: 40px;
 }
-.handle {
-  cursor: pointer;
-  fill: steelblue;
-  touch-action: none;  /* Prevents default touch actions */
+#plot {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 50vw, 400px);  /* 2:1 on wide screens, squarer on phones */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bg {
+  fill: none;
 }
 .area {
   fill: lightsteelblue;
   stroke: steelblue;
   stroke-width: 2;
+  vector-effect: non-scaling-stroke;  /* drawn in unit coordinates, so don't scale the stroke too */
 }
 .cdf-line {
   fill: none;
   stroke: red;
   stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.pt {
+  fill: steelblue;
+  cursor: pointer;
+}
+.y-axis {
+  color: steelblue;
+}
+.cdf-axis {
+  color: red;
 }
 .inputs, .distribution-section {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
 }
-input, select {
+input {
   width: 80px;
-  margin-right: 10px;
+  font-size: 16px;  /* under 16px, iOS Safari zooms the page when the input gets focus */
 }
 button {
-  margin-left: 10px;
+  min-height: 44px;  /* finger-sized */
   padding: 8px 16px;
   background-color: #4CAF50;
   color: white;
@@ -49,16 +65,24 @@ button {
 button:hover {
   background-color: #45a049;
 }
-
 .undo-section {
   margin-top: 20px;
   text-align: center;
 }
-
 #undo-button {
   background-color: #f44336;
 }
-
 #undo-button:hover {
   background-color: #d32f2f;
+}
+#undo-button:disabled {
+  background-color: #bbb;
+  cursor: default;
+}
+.err {
+  color: #b00020;
+  background-color: #fdecea;
+  border: 1px solid #f5c2c0;
+  border-radius: 4px;
+  padding: 8px 12px;
 }

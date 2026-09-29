@@ -1,0 +1,11 @@
+{
+  "name": "distributopia",
+  "private": true,
+  "scripts": {
+    "qual": "node --test \"quals/*.qual.mjs\""
+  },
+  "devDependencies": {
+    "d3": "^7.9.0",
+    "playwright-core": "^1.63.0"
+  }
+}

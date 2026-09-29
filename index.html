@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,20 +9,18 @@
   <link rel="stylesheet" href="style.css">
   <meta property="og:title" content="Distributopia">
   <meta property="og:description" content="An interactive distribution builder">
-  <meta property="og:image" content="https://distributopia.replit.app/screenshot2.png">
-  <meta property="og:url" content="https://distributopia.replit.app/">
+  <meta property="og:image" content="https://distributopia.dreev.es/screenshot2.png">
+  <meta property="og:url" content="https://distributopia.dreev.es/">
   <meta property="og:type" content="website">
 </head>
 <body>
   <h1>Distributopia</h1>
-  <p><center>by dreev and manicode</center></p>
-  <svg width="800" height="400" viewBox="0 0 800 420"></svg>
+  <svg id="plot"></svg>
   <div class="inputs">
     <label for="min-x">X-min: <input type="number" id="min-x" value="0" step="0.1"></label>
     <label for="max-x">X-max: <input type="number" id="max-x" value="1" step="0.1"></label>
   </div>
-
-<br>&nbsp;<br>
+  <p id="range-err" class="err" role="alert" hidden>Error: Invalid values for X-min and X-max</p>
 
 <h3>Off-the-shelf distributions to try</h3>
   <div class="distribution-section">
@@ -41,17 +40,13 @@
   <p>
   Click on the graph to add a point. 
   Click on it again to remove it.
-  With a mouse you can drag the points.
-  (Somehow Manicode cannot for the life of it make that work on mobile.)
+  You can also drag points.
   </p>
   <p>
-  So you draw your probability density function in blue and the cumulative distribution function (cdf) is shown in red.
-  That's all so far!
-  </p>
-  <p>
-  [version 2024.09.05-0326]
+  Draw your probability density function in blue and the cumulative distribution function (cdf) is shown in red.
   </p>
 
+  <script src="math.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
