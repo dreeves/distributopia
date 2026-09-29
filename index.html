@@ -5,13 +5,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Distributopia</title>
+  <meta name="description" content="An interactive distribution builder">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <meta property="og:title" content="Distributopia">
   <meta property="og:description" content="An interactive distribution builder">
-  <meta property="og:image" content="https://distributopia.dreev.es/screenshot2.png">
+  <meta property="og:image" content="https://distributopia.dreev.es/preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Distributopia: screenshot of the app with a two-humped probability density function in blue and the cdf in red">
   <meta property="og:url" content="https://distributopia.dreev.es/">
   <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
   <h1>Distributopia</h1>
@@ -34,13 +43,14 @@
   </div>
   <div class="undo-section">
     <button id="undo-button">Undo</button>
+    <button id="redo-button">Redo</button>
   </div>
 
   <h2>Instructions</h2>
   <p>
   Click on the graph to add a point. 
   Click on it again to remove it.
-  You can also drag points.
+  You can also drag points, and drag to make a trail of points.
   </p>
   <p>
   Draw your probability density function in blue and the cumulative distribution function (cdf) is shown in red.

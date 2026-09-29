@@ -7,8 +7,8 @@ import vm from 'node:vm'
 
 // math.js is a classic browser script, so evaluate it in this realm and pull out its globals
 vm.runInThisContext(fs.readFileSync(new URL('../math.js', import.meta.url), 'utf8'))
-const { check, poly, cum, areaD, cdfD, add, remove, move, nearest, PRESETS } =
-  vm.runInThisContext('({ check, poly, cum, areaD, cdfD, add, remove, move, nearest, PRESETS })')
+const { check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, PRESETS } =
+  vm.runInThisContext('({ check, poly, cum, areaD, cdfD, add, remove, move, nearest, trail, PRESETS })')
 
 const near = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} is not within ${tol} of ${b}`)
 
@@ -143,4 +143,59 @@ test('PRESETS: shapes match the original generators', () => {
   assert.equal(argmax(ys('beta')), 2)                 // beta(2,5) has its mode at 0.2; nearest grid pt is 2/9
   assert.equal(argmax(ys('lognormal')), 7)            // mode e^-0.25 ≈ 0.779; nearest grid pt is 0.78
   symmetric(ys('bimodal')); assert.deepEqual([3, 6].map(i => ys('bimodal')[i] > ys('bimodal')[4]), [true, true])
+})
+
+// Assert pts match want, u and y each within 1e-9
+function assertPts(got, want) {
+  const ok = got.length === want.length && got.every((p, i) => Math.abs(p.u - want[i].u) < 1e-9 && Math.abs(p.y - want[i].y) < 1e-9)
+  assert.ok(ok, `got ${JSON.stringify(got)}, expected ${JSON.stringify(want)}`)
+}
+
+test('add: several pts at once → all land in u order', () => {
+  assert.deepEqual(add([{u: .5, y: .5}], {u: .7, y: .1}, {u: .2, y: .9}), [{u: .2, y: .9}, {u: .5, y: .5}, {u: .7, y: .1}])
+})
+
+// trail's third argument is the plot's height over its width, so distances come out as they look on
+// screen. These quals mostly use .5, a plot twice as wide as it is tall.
+
+test('trail: press without moving → one dot at the press', () => {
+  assertPts(trail([{u: .3, y: .4}], .05, .5), [{u: .3, y: .4}])
+})
+
+test('trail: drag 12% right → dots at the press, +5%, +10%', () => {
+  assertPts(trail([{u: .3, y: .4}, {u: .42, y: .4}], .05, .5), [.3, .35, .4].map(u => ({u, y: .4})))
+})
+
+test('trail: drag left → dots at −5%, −10%, in u order', () => {
+  assertPts(trail([{u: .5, y: .5}, {u: .39, y: .5}], .05, .5), [.4, .45, .5].map(u => ({u, y: .5})))
+})
+
+test('trail: drag straight up → dots as far apart on screen as horizontally (on a 2:1 plot, every .1 of height)', () => {
+  assertPts(trail([{u: .5, y: .1}, {u: .5, y: .5}], .05, .5), [.1, .2, .3, .4, .5].map(y => ({u: .5, y})))
+})
+
+test('trail: diagonal drag → a dot every step of on-screen distance along it', () => {
+  // (0,0) to (.3,.8) on a 2:1 plot is .3 wide and .4 tall in width units: length .5, so 10 steps
+  assertPts(trail([{u: 0, y: 0}, {u: .3, y: .8}], .05, .5), Array.from({length: 11}, (_, m) => ({u: .03 * m, y: .08 * m})))
+})
+
+test('trail: out and back over the same stretch → breadcrumbs from both passes all stay', () => {
+  // out .1 along y = .5, then back from (.4, .5) to (.3, .7), which is .1 wide and .1 tall on screen
+  const t = [.05, .1].map(s => s / Math.hypot(.1, .1))  // fraction of the way back at path length .15 and .2
+  assertPts(trail([{u: .3, y: .5}, {u: .4, y: .5}, {u: .3, y: .7}], .05, .5),
+            [{u: .3, y: .5}, {u: .4 - .1 * t[1], y: .5 + .2 * t[1]}, {u: .35, y: .5}, {u: .4 - .1 * t[0], y: .5 + .2 * t[0]}, {u: .4, y: .5}])
+})
+
+test('trail: fast drag sampled once or slow drag sampled 100 times → same dots', () => {
+  const [a, b] = [{u: .1, y: .2}, {u: .8, y: .6}]
+  const slow = Array.from({length: 101}, (_, i) => ({u: a.u + (b.u - a.u) * i / 100, y: a.y + (b.y - a.y) * i / 100}))
+  assertPts(trail(slow, .05, .5), trail([a, b], .05, .5))
+})
+
+test('trail: pointer beyond the plot → path clamped to the unit square', () => {
+  assertPts(trail([{u: .88, y: .5}, {u: 1.3, y: .5}], .05, .5), [.88, .93, .98].map(u => ({u, y: .5})))
+})
+
+test('trail: any wiggly path → valid pts', () => {
+  check(trail([.5, .61, .44, .7, .33, .9, .12, .95].map((u, i) => ({u, y: (i % 3) / 2})), .05, .5))
 })

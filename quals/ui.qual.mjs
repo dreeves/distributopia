@@ -3,8 +3,10 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { chromium } from 'playwright-core'
+import fs from 'node:fs'
 
-const PAGE = new URL('../index.html', import.meta.url).href
+const ROOT = new URL('../', import.meta.url)
+const PAGE = new URL('index.html', ROOT).href
 const D3 = new URL('../node_modules/d3/dist/d3.min.js', import.meta.url).pathname
 const DESK = {viewport: {width: 1024, height: 800}}
 const PHONE = {viewport: {width: 375, height: 667}, hasTouch: true, isMobile: true, deviceScaleFactor: 2}
@@ -127,6 +129,36 @@ test('desktop: click a pt to remove it → exactly one undo step brings it back'
   assert.ok(await undoOff(page))
 })
 
+const redoOff = page => page.locator('#redo-button').isDisabled()
+
+test('desktop: undo twice, redo twice → both edits come back, redo grays out, undo still works', async () => {
+  const {page} = await open(DESK)
+  assert.ok(await redoOff(page))
+  await click(page, .3, .5); await click(page, .7, .5)
+  await page.click('#undo-button'); await page.click('#undo-button')
+  await assertPts(page, [])
+  await page.click('#redo-button'); await assertPts(page, [{u: .3, y: .5}])
+  await page.click('#redo-button'); await assertPts(page, [{u: .3, y: .5}, {u: .7, y: .5}])
+  assert.ok(await redoOff(page))
+  await page.click('#undo-button'); await assertPts(page, [{u: .3, y: .5}])
+})
+
+test('desktop: new edit after an undo → redo grays out (the undone edit is gone for good)', async () => {
+  const {page} = await open(DESK)
+  await click(page, .3, .5); await page.click('#undo-button')
+  assert.equal(await redoOff(page), false)
+  await click(page, .6, .6)
+  assert.ok(await redoOff(page))
+})
+
+test('desktop: no-op edit after an undo (reloading the preset already shown) → redo still available', async () => {
+  const {page} = await open(DESK)
+  await page.click('#normal-dist'); await page.click('#triangular-dist'); await page.click('#undo-button')
+  await page.click('#normal-dist')
+  await page.click('#redo-button')
+  await assertPts(page, [{u: 0, y: 0}, {u: .5, y: 1}, {u: 1, y: 0}])
+})
+
 test('desktop: preset buttons → load their shapes, undoably', async () => {
   const {page} = await open(DESK)
   const counts = {normal: 18, uniform: 2, exponential: 10, triangular: 3, beta: 10, lognormal: 10, bimodal: 10}
@@ -176,6 +208,45 @@ test('desktop: left axis → true density; top of the plot is 1/(area in unit sq
   await assertDensityTop(page, 2)
   await page.fill('#max-x', '4')                  // same shape spread over 0..4
   await assertDensityTop(page, .5)
+})
+
+// WCAG contrast ratio of two computed CSS colors like "rgb(185, 28, 28)"
+function contrast(a, b) {
+  const lum = c => {
+    const [r, g, bl] = c.match(/[\d.]+/g).slice(0, 3).map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
+    return .2126 * r + .7152 * g + .0722 * bl
+  }
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+  return (hi + .05) / (lo + .05)
+}
+
+test('desktop: reds meet WCAG AA → cdf line ≥ 3:1 on white and on the pdf fill; red text ≥ 4.5:1', async () => {
+  const {page} = await open(DESK)
+  await page.click('#triangular-dist'); await page.click('#normal-dist'); await page.click('#undo-button')  // both enabled
+  await page.fill('#min-x', '5')  // show the error banner
+  const c = await page.evaluate(() => {
+    const cs = sel => getComputedStyle(document.querySelector(sel))
+    return {line: cs('#plot .cdf-line').stroke, fill: cs('#plot .area').fill,
+            text: [['cdf axis', cs('#plot .cdf-axis .tick text').fill, 'rgb(255, 255, 255)'],
+                   ...['#undo-button', '#redo-button', '#range-err'].map(s => [s, cs(s).color, cs(s).backgroundColor])]}
+  })
+  for (const bg of ['rgb(255, 255, 255)', c.fill]) assert.ok(contrast(c.line, bg) >= 3, `cdf line ${c.line} on ${bg}: ${contrast(c.line, bg)}`)
+  for (const [what, fg, bg] of c.text) assert.ok(contrast(fg, bg) >= 4.5, `${what}: ${fg} on ${bg}: ${contrast(fg, bg)}`)
+})
+
+test('desktop: other text meets WCAG AA → left-axis labels and white-on-green button text ≥ 4.5:1, hovered too', async () => {
+  const {page} = await open(DESK)
+  await page.click('#triangular-dist')
+  const fill = sel => page.evaluate(s => getComputedStyle(document.querySelector(s)).fill, sel)
+  const colors = sel => page.evaluate(s => [getComputedStyle(document.querySelector(s)).color, getComputedStyle(document.querySelector(s)).backgroundColor], sel)
+  const axis = await fill('#plot .y-axis .tick text')
+  assert.ok(contrast(axis, 'rgb(255, 255, 255)') >= 4.5, `left-axis labels ${axis}: ${contrast(axis, 'rgb(255, 255, 255)')}`)
+  await page.mouse.move(0, 0)
+  for (const hover of [false, true]) {
+    if (hover) await page.hover('#normal-dist')
+    const [fg, bg] = await colors('#normal-dist')
+    assert.ok(contrast(fg, bg) >= 4.5, `preset button${hover ? ' hovered' : ''}: ${fg} on ${bg}: ${contrast(fg, bg)}`)
+  }
 })
 
 test('desktop: set X-min/X-max → x-axis relabels, pts stay put', async () => {
@@ -251,4 +322,114 @@ test('phone: tap a pt with 2px of finger wobble → still counts as a tap, pt re
   const a = await at(page, .5, .5)
   await touchPath(page, [a, {x: a.x + 2, y: a.y + 1}])
   await assertPts(page, [])
+})
+
+// ------------------------------------------------------------------------------ favicons, previews
+
+const file = href => fs.readFileSync(new URL(href, ROOT))
+const pngSize = buf => [buf.readUInt32BE(16), buf.readUInt32BE(20)]  // from the PNG's IHDR chunk
+
+test('head: icons → 32px favicon.ico, SVG favicon, 180px apple-touch-icon, manifest with 192px and 512px icons', async () => {
+  const {page} = await open(DESK)
+  const links = await page.evaluate(() => [...document.querySelectorAll('link[rel]')]
+    .map(l => ({rel: l.rel, href: l.getAttribute('href'), type: l.type})))
+  const find = (rel, ok) => links.find(l => l.rel === rel && ok(l)) ?? assert.fail(`no ${rel} link in ${JSON.stringify(links)}`)
+  const ico = file(find('icon', l => l.href.endsWith('.ico')).href)
+  assert.deepEqual([ico.readUInt16LE(2), ico[6], ico[7]], [1, 32, 32])        // an icon, 32×32 ...
+  assert.deepEqual(pngSize(ico.subarray(ico.readUInt32LE(18))), [32, 32])    // ... holding a 32×32 PNG
+  assert.match(file(find('icon', l => l.type === 'image/svg+xml').href).toString(), /^<svg /)
+  assert.deepEqual(pngSize(file(find('apple-touch-icon', () => true).href)), [180, 180])
+  const man = JSON.parse(file(find('manifest', () => true).href))
+  assert.deepEqual(man.icons.map(i => [i.sizes, pngSize(file(i.src)).join('x')]), [['192x192', '192x192'], ['512x512', '512x512']])
+})
+
+test('head: link preview → 1200×630 og:image on the site, with alt text; large Twitter card; description = og:description', async () => {
+  const {page} = await open(DESK)
+  const m = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('meta[property], meta[name]')]
+    .map(e => [e.getAttribute('property') ?? e.name, e.content])))
+  const site = m['og:url']
+  assert.match(site, /^https:\/\/.*\/$/)
+  assert.ok(m['og:image'].startsWith(site), `og:image ${m['og:image']} is not on ${site}`)
+  assert.deepEqual(pngSize(file(m['og:image'].slice(site.length))), [1200, 630])
+  assert.deepEqual([m['og:image:width'], m['og:image:height']], ['1200', '630'])
+  assert.ok(m['og:image:alt']?.length > 0, 'no og:image:alt')
+  assert.equal(m['twitter:card'], 'summary_large_image')
+  assert.ok(m['og:title'] && m['og:description'])
+  assert.equal(m.description, m['og:description'])
+})
+
+// ------------------------------------------------------------------------- drawing from a blank spot
+
+// Mouse down at the first plot position, straight through the rest in small steps, up
+async function mousePath(page, stops) {
+  const [first, ...rest] = await Promise.all(stops.map(([u, y]) => at(page, u, y)))
+  await page.mouse.move(first.x, first.y); await page.mouse.down()
+  for (const p of rest) await page.mouse.move(p.x, p.y, {steps: 12})
+  await page.mouse.up()
+}
+
+// The plot's height over its width, and so how much of the height one 5% step of the width spans
+const aspect = async page => { const b = await page.locator('#plot .bg').boundingBox(); return b.height / b.width }
+
+test('desktop: drag right from a blank spot → dots at the press and every 5% of the x-range; one undo takes them all', async () => {
+  const {page} = await open(DESK)
+  await mousePath(page, [[.3, .4], [.52, .4]])
+  await assertPts(page, [.3, .35, .4, .45, .5].map(u => ({u, y: .4})))
+  await page.click('#undo-button')
+  await assertPts(page, [])
+})
+
+test('desktop: drag straight up from a blank spot → dots as far apart on screen as on a horizontal drag', async () => {
+  const {page} = await open(DESK)
+  const dy = .05 / await aspect(page)
+  await mousePath(page, [[.5, .1], [.5, .1 + 3.5 * dy]])
+  await assertPts(page, [0, 1, 2, 3].map(m => ({u: .5, y: .1 + m * dy})))
+})
+
+test('desktop: drag out and back over the same stretch → the dots from both passes all stay', async () => {
+  const {page} = await open(DESK)
+  await mousePath(page, [[.3, .5], [.46, .5], [.29, .8]])
+  const got = await pts(page), back = u => .5 + .3 * (.46 - u) / .17  // height of the way back at u
+  const length = .16 + Math.hypot(.17, .3 * await aspect(page))    // whole path, in widths
+  assert.equal(got.length, 1 + Math.floor(length / .05), JSON.stringify(got))
+  for (const u of [.3, .35, .4, .45]) assert.ok(got.some(p => Math.abs(p.u - u) <= TOL && Math.abs(p.y - .5) <= TOL), `no dot left at (${u}, .5)`)
+  for (const p of got.filter(p => Math.abs(p.y - .5) > TOL)) assert.ok(Math.abs(p.y - back(p.u)) <= TOL, `${JSON.stringify(p)} is off the way back`)
+})
+
+test('phone: finger-drag straight up from a blank spot → dots every 5% of the plot width, on screen', async () => {
+  const {page} = await open(PHONE)
+  const dy = .05 / await aspect(page)
+  const [a, b] = [await at(page, .5, .1), await at(page, .5, .1 + 3.5 * dy)]
+  await touchPath(page, Array.from({length: 13}, (_, i) => ({x: a.x, y: a.y + (b.y - a.y) * i / 12})))
+  await assertPts(page, [0, 1, 2, 3].map(m => ({u: .5, y: .1 + m * dy})))
+})
+
+// Touch events dispatched from inside the page, so every pixel of drift reaches the app. (Chrome's
+// own input pipeline holds back small touchmoves, but not every browser does.)
+async function synthTouch(page, path) {
+  await page.evaluate(path => {
+    const target = document.elementFromPoint(path[0].x, path[0].y)
+    const fire = (type, p) => {
+      const t = new Touch({identifier: 1, target, clientX: p.x, clientY: p.y}), down = type === 'touchend' ? [] : [t]
+      target.dispatchEvent(new TouchEvent(type, {touches: down, targetTouches: down, changedTouches: [t], bubbles: true, cancelable: true}))
+    }
+    fire('touchstart', path[0]); path.slice(1).forEach(p => fire('touchmove', p)); fire('touchend', path.at(-1))
+  }, path)
+  await settle(page)
+}
+
+test('phone: tap a pt with 10px of finger drift → still a tap, pt removed (real taps drift more than 3px)', async () => {
+  const {page} = await open(PHONE)
+  await tap(page, .5, .5)
+  const a = await at(page, .5, .5)
+  await synthTouch(page, [a, {x: a.x + 6, y: a.y + 4}, {x: a.x + 10, y: a.y}])
+  await assertPts(page, [])
+})
+
+test('phone: tap a blank spot with 14px of sideways drift (more than a 5% step) → one dot, not a trail', async () => {
+  const {page} = await open(PHONE)
+  const a = await at(page, .5, .5), b = await at(page, .555, .5)
+  assert.ok(b.x - a.x > 13 && b.x - a.x < 15, `drift ${b.x - a.x}px should exceed a 5% step yet stay under 15px`)
+  await synthTouch(page, [a, {x: (a.x + b.x) / 2, y: a.y}, b])
+  await assertPts(page, [{u: .5, y: .5}])
 })

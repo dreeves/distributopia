@@ -14,6 +14,9 @@ function assert(ok, msg) { if (!ok) throw new Error(`Assertion failed: ${msg}`) 
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 
+// q moved to the nearest point of the unit square
+const clampPt = q => ({u: clamp(q.u, 0, 1), y: clamp(q.y, 0, 1)})
+
 const poly = pts => [{u: 0, y: 0}, ...pts, {u: 1, y: 0}]
 
 // Assert pts are sorted by u and inside the unit square (which also rules out NaNs); return pts
@@ -49,8 +52,27 @@ function cdfD(P) {
   return d
 }
 
-// pts plus q, kept inside the unit square; a stable sort puts q after any pt with the same u
-const add = (pts, q) => [...pts, {u: clamp(q.u, 0, 1), y: clamp(q.y, 0, 1)}].sort((a, b) => a.u - b.u)
+// pts plus qs, kept inside the unit square; a stable sort puts each q after any pt with the same u
+const add = (pts, ...qs) => [...pts, ...qs.map(clampPt)].sort((a, b) => a.u - b.u)
+
+// The dots a drag from a blank spot leaves, given the pointer's path (clamped to the unit square):
+// breadcrumbs, one at the press and then one every step of path length (straight between samples),
+// never removed. Lengths are as they look on screen: aspect is the plot's height over its width, so
+// y distances count aspect times as much as u distances, and step is a fraction of the width.
+function trail(path, step, aspect) {
+  assert(step > 0 && aspect > 0 && path.length > 0, `trail needs a path, and step and aspect > 0: ${step}, ${aspect}`)
+  const P = path.map(clampPt), dots = [P[0]]
+  let s = 0, next = step  // path length so far, and where the next dot goes
+  for (let i = 1; i < P.length; i++) {
+    const a = P[i - 1], b = P[i], len = Math.hypot(b.u - a.u, (b.y - a.y) * aspect)
+    for (; next <= s + len; next += step) {  // never true for len = 0, since next > s
+      const t = (next - s) / len
+      dots.push(clampPt({u: a.u + (b.u - a.u) * t, y: a.y + (b.y - a.y) * t}))  // clamp: float noise
+    }
+    s += len
+  }
+  return dots.sort((p, q) => p.u - q.u)
+}
 
 const remove = (pts, i) => pts.filter((_, j) => j !== i)
 

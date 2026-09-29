@@ -9,10 +9,7 @@ But then I got it working with Manicode. Yay!
 
 ## Wishlist
 
-1. A redo button
-2. Dragging from a blank spot on the graph makes a stream of dots spaced, say, at 5% of the domain
-3. Pick a better red; think about accessibility
-4. Do all the favicon and link-preview stuff
+1. A way to link to artibrary distibutions, maybe encoding it in the URL
 
 ## The Math
 
