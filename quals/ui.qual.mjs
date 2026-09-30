@@ -444,3 +444,54 @@ test('desktop: drag across part of the Normal preset → its pts in that stretch
   await page.click('#undo-button')
   assert.equal((await pts(page)).length, 18)
 })
+
+// ------------------------------------------------------------------------------ drawing across edges
+
+// Assert the first pt is on x-min and the last on x-max, at the heights where a straight drag from
+// (u0, y0) to (u1, y1) crosses them
+async function assertEdgeDots(page, [u0, y0], [u1, y1]) {
+  const got = await pts(page), cross = u => y0 + (y1 - y0) * (u - u0) / (u1 - u0)
+  const [first, last] = [got[0], got.at(-1)]
+  assert.ok(Math.abs(first.u) <= TOL && Math.abs(first.y - cross(0)) <= TOL, `first dot ${JSON.stringify(first)}, expected (0, ${cross(0)})`)
+  assert.ok(Math.abs(last.u - 1) <= TOL && Math.abs(last.y - cross(1)) <= TOL, `last dot ${JSON.stringify(last)}, expected (1, ${cross(1)})`)
+  return got
+}
+
+test('desktop: drag in from left of the plot and out past its right → dots exactly on x-min and x-max, where the drag crossed', async () => {
+  const {page} = await open(DESK)
+  await mousePath(page, [[-.05, .3], [1.05, .5]])
+  const got = await assertEdgeDots(page, [-.05, .3], [1.05, .5])
+  const inside = Math.hypot(1, .2 * await aspect(page) / 1.1)  // length between the edges, in widths
+  assert.equal(got.length, 1 + Math.floor(inside / .05) + 1, JSON.stringify(got))
+})
+
+test('desktop: wiggle up and down left of the plot, then drag in → just one dot on x-min, where the drag came in', async () => {
+  const {page} = await open(DESK)
+  await mousePath(page, [[-.04, .2], [-.04, .5], [-.04, .3], [.3, .4]])
+  const onEdge = (await pts(page)).filter(p => Math.abs(p.u) <= TOL)
+  assert.equal(onEdge.length, 1, JSON.stringify(onEdge))
+  assert.ok(Math.abs(onEdge[0].y - (.3 + .1 * .04 / .34)) <= TOL, JSON.stringify(onEdge))
+})
+
+test('desktop: tap just left of the plot → a dot on x-min at that height, as before', async () => {
+  const {page} = await open(DESK)
+  await click(page, -.03, .6)
+  await assertPts(page, [{u: 0, y: .6}])
+})
+
+test('phone: finger-drag in from left of the plot and out past its right → dots exactly on x-min and x-max', async () => {
+  const {page} = await open(PHONE)
+  const [a, b] = [await at(page, -.05, .3), await at(page, 1.05, .5)]
+  await touchPath(page, Array.from({length: 25}, (_, i) => ({x: a.x + (b.x - a.x) * i / 24, y: a.y + (b.y - a.y) * i / 24})))
+  await assertEdgeDots(page, [-.05, .3], [1.05, .5])
+})
+
+test('desktop: the area that takes clicks and drags (the plot and its margins) is outlined; just outside the outline, clicks do nothing', async () => {
+  const {page} = await open(DESK)
+  assert.notEqual(await page.evaluate(() => getComputedStyle(document.querySelector('#plot')).boxShadow), 'none')
+  const box = await page.locator('#plot').boundingBox()
+  await page.mouse.click(box.x + 3, box.y + box.height - 3)  // just inside the bottom-left corner: lands on (0, 0)
+  await assertPts(page, [{u: 0, y: 0}])
+  await page.mouse.click(box.x - 3, box.y + box.height / 2)  // just outside the left side
+  await assertPts(page, [{u: 0, y: 0}])
+})

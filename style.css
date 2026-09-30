@@ -17,6 +17,8 @@ h3 {
   display: block;
   width: 100%;
   height: clamp(240px, 50vw, 400px);  /* 2:1 on wide screens, squarer on phones */
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px #e8e8e8;  /* faint edge of where clicks and drags count; a shadow, so no layout change */
   user-select: none;
   -webkit-user-select: none;
 }

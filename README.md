@@ -1,8 +1,13 @@
-me in the manifold discord on 2024-07-23:
 
-i've been wanting a distribution-builder for a long time, like metaculus has, and it occurred to me today that chatgpt could, with nonzero probability, throw something usable together. here's what it has so far: https://distributopia.dreev.es/
+https://distributopia.dreev.es/
 
-update: it's all wrong and chatgpt is hopelessly confused trying to fix it. it did make more progress than claude 3.5 sonnet though.
+## Origin Story
+
+Me in the Manifold Discord on 2024-07-23:
+
+> i've been wanting a distribution-builder for a long time, like metaculus has, and it occurred to me today that chatgpt could, with nonzero probability, throw something usable together. here's what it has so far: [link]
+> 
+> update: it's all wrong and chatgpt is hopelessly confused trying to fix it. it did make more progress than claude 3.5 sonnet though.
 
 But then I got it working with Manicode. Yay!
 
@@ -10,7 +15,7 @@ But then I got it working with Manicode. Yay!
 ## Wishlist
 
 1. A way to link to artibrary distibutions, maybe encoding it in the URL
-2. Quibble: when dragging from the side, onto or off of the plot, put a dot right on the edge where the dragging entered or left
+2. Maybe a way to rescale the density function so it uses the full height of the graph (not sure if it would be annoying if it did that automatically)
 
 ## The Math
 

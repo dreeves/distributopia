@@ -192,8 +192,35 @@ test('trail: fast drag sampled once or slow drag sampled 100 times → same dots
   assertPts(trail(slow, .05, .5), trail([a, b], .05, .5))
 })
 
-test('trail: pointer beyond the plot → path clamped to the unit square', () => {
-  assertPts(trail([{u: .88, y: .5}, {u: 1.3, y: .5}], .05, .5), [.88, .93, .98].map(u => ({u, y: .5})))
+test('trail: drag in from left of the plot → a dot exactly on x-min where it crossed, then every step from there', () => {
+  // (-.1, .2) to (.2, .5) crosses u = 0 a third of the way along, at height .3; inside, it's .2 wide and .1 tall on screen
+  const L = Math.hypot(.2, .1)
+  assertPts(trail([{u: -.1, y: .2}, {u: .2, y: .5}], .05, .5), [0, 1, 2, 3, 4].map(k => ({u: .2 * k * .05 / L, y: .3 + .2 * k * .05 / L})))
+})
+
+test('trail: drag out past x-max → a dot exactly on x-max where it crossed, none beyond', () => {
+  // (.8, .5) to (1.2, .9) crosses u = 1 halfway, at height .7; inside, it's .2 wide and .1 tall on screen
+  const L = Math.hypot(.2, .1)
+  assertPts(trail([{u: .8, y: .5}, {u: 1.2, y: .9}], .05, .5),
+            [...[0, 1, 2, 3, 4].map(k => ({u: .8 + .2 * k * .05 / L, y: .5 + .2 * k * .05 / L})), {u: 1, y: .7}])
+})
+
+test('trail: straight across from left of the plot to right of it → dots on x-min, every 5%, and x-max, no doubles', () => {
+  assertPts(trail([{u: -.1, y: .4}, {u: 1.1, y: .4}], .05, .5), Array.from({length: 21}, (_, k) => ({u: k * .05, y: .4})))
+})
+
+test('trail: wiggling up and down left of the plot, then in → nothing drawn outside, one dot where it came in', () => {
+  const got = trail([{u: -.04, y: .2}, {u: -.04, y: .5}, {u: -.04, y: .3}, {u: .3, y: .4}], .05, .5)
+  assert.equal(got.filter(p => p.u === 0).length, 1, JSON.stringify(got))
+  assertPts(got.slice(0, 1), [{u: 0, y: .3 + .1 * .04 / .34}])  // where (-.04, .3) to (.3, .4) crosses u = 0
+})
+
+test('trail: a lone point outside the x-range → no dots', () => {
+  assertPts(trail([{u: -.1, y: .5}], .05, .5), [])
+})
+
+test('trail: drag above and below the plot → heights clamped to 0..1', () => {
+  check(trail([{u: .1, y: .5}, {u: .3, y: 1.6}, {u: .5, y: -.4}, {u: .7, y: .5}], .05, .5))
 })
 
 test('trail: any wiggly path → valid pts', () => {
@@ -215,7 +242,7 @@ test('sketch: out to .6 and back to .4 → the whole stretch reached, .3 to .6, 
   assert.deepEqual(got.filter(p => p.y === .9), [{u: .65, y: .9}])
 })
 
-test('sketch: drag beyond the plot → covered stretch clamped to the unit square', () => {
-  const got = sketch([{u: .95, y: .9}], [{u: .8, y: .1}, {u: 1.3, y: .1}], .05, .5)
+test('sketch: drag past the edge of the plot → the covered stretch includes the edge, so a pt right on it gives way too', () => {
+  const got = sketch([{u: .95, y: .9}, {u: 1, y: .9}], [{u: .8, y: .1}, {u: 1.3, y: .1}], .05, .5)
   assert.ok(got.every(p => p.y !== .9), JSON.stringify(got))
 })

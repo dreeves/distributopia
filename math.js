@@ -55,29 +55,44 @@ function cdfD(P) {
 // pts plus qs, kept inside the unit square; a stable sort puts each q after any pt with the same u
 const add = (pts, ...qs) => [...pts, ...qs.map(clampPt)].sort((a, b) => a.u - b.u)
 
-// The dots a drag from a blank spot leaves, given the pointer's path (clamped to the unit square):
-// breadcrumbs, one at the press and then one every step of path length (straight between samples),
-// never removed. Lengths are as they look on screen: aspect is the plot's height over its width, so
-// y distances count aspect times as much as u distances, and step is a fraction of the width.
+// The dots a drag from a blank spot leaves, given the pointer's path. Only the parts of the path in
+// the x-range (0 <= u <= 1) draw, with heights clamped to 0..1. Each part gets a dot where it begins
+// (the press, or exactly where the path crossed in over x-min or x-max), breadcrumbs every step of
+// path length after that, and a dot exactly where it crosses back out. Lengths are as they look on
+// screen: aspect is the plot's height over its width, so y distances count aspect times as much as
+// u distances, and step is a fraction of the width.
 function trail(path, step, aspect) {
   assert(step > 0 && aspect > 0 && path.length > 0, `trail needs a path, and step and aspect > 0: ${step}, ${aspect}`)
-  const P = path.map(clampPt), dots = [P[0]]
-  let s = 0, next = step  // path length so far, and where the next dot goes
+  const P = path.map(q => ({u: q.u, y: clamp(q.y, 0, 1)}))
+  const Q = [P[0]]  // P cut wherever it crosses u = 0 or u = 1, so each piece is wholly in or out
   for (let i = 1; i < P.length; i++) {
-    const a = P[i - 1], b = P[i], len = Math.hypot(b.u - a.u, (b.y - a.y) * aspect)
+    const a = P[i - 1], b = P[i]
+    Q.push(...[0, 1].map(e => [e, (e - a.u) / (b.u - a.u)])  // an edge, and how far along a→b it's crossed
+                    .filter(([, t]) => 0 < t && t < 1)         // (NaN or ±Infinity when a→b is vertical)
+                    .sort((m, n) => m[1] - n[1])
+                    .map(([e, t]) => ({u: e, y: a.y + (b.y - a.y) * t})), b)
+  }
+  const inside = q => 0 <= q.u && q.u <= 1
+  const dots = [Q[0]].filter(inside)  // the press, if it's in the x-range
+  let was = inside(Q[0]), s = 0, next = step  // last piece in?; path length in this part; where the next dot goes
+  for (let i = 1; i < Q.length; i++) {
+    const a = Q[i - 1], b = Q[i], now = inside(a) && inside(b)
+    if (now !== was) { dots.push(a); s = 0; next = step }  // crossed x-min or x-max at a, in or out
+    const len = now ? Math.hypot(b.u - a.u, (b.y - a.y) * aspect) : 0  // outside draws nothing
     for (; next <= s + len; next += step) {  // never true for len = 0, since next > s
       const t = (next - s) / len
-      dots.push(clampPt({u: a.u + (b.u - a.u) * t, y: a.y + (b.y - a.y) * t}))  // clamp: float noise
+      dots.push({u: a.u + (b.u - a.u) * t, y: a.y + (b.y - a.y) * t})
     }
-    s += len
+    s += len; was = now
   }
-  return dots.sort((p, q) => p.u - q.u)
+  return dots.map(clampPt).sort((p, q) => p.u - q.u)  // clamp: float noise
 }
 
 // pts after a drag from a blank spot along path: the trail's dots replace the pts strictly inside
-// the stretch of u the path covered (a tap covers none, so replaces nothing)
+// the stretch of u the path covered, edges included when it went past them (a tap covers none, so
+// replaces nothing)
 function sketch(pts, path, step, aspect) {
-  const us = path.map(q => clamp(q.u, 0, 1)), lo = Math.min(...us), hi = Math.max(...us)
+  const us = path.map(q => q.u), lo = Math.min(...us), hi = Math.max(...us)  // a drag past an edge covers it
   return add(pts.filter(p => p.u <= lo || hi <= p.u), ...trail(path, step, aspect))
 }
 
